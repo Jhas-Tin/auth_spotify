@@ -111,21 +111,20 @@ class _PlansPageState extends State<PlansPage> {
     // Close loading
     Navigator.pop(context);
 
-    // ✅ SAVE PLAN DATA TO HIVE
-    widget.box.put("plan_active", true);
-    widget.box.put("plan_name", plan);
-    widget.box.put("plan_price", price);
-    widget.box.put("plan_duration", duration);
-
     // Open payment page
     Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (_) => PaymentPage(url: data['invoice_url']),
+        builder: (_) => PaymentPage(
+          url: data['invoice_url'],
+          box: widget.box,
+          planName: plan,
+          planPrice: price,
+          planDuration: duration,
+        ),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -202,14 +201,11 @@ class _HomepageState extends State<Homepage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo
                 Image.network(
                   'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
                   width: 150,
                 ),
                 const SizedBox(height: 40),
-
-                // Welcome Text
                 const Text(
                   'Welcome Back',
                   style: TextStyle(
@@ -227,8 +223,6 @@ class _HomepageState extends State<Homepage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Username Field
                 CupertinoTextField(
                   controller: _username,
                   placeholder: 'Username',
@@ -244,8 +238,6 @@ class _HomepageState extends State<Homepage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Password Field
                 CupertinoTextField(
                   controller: _password,
                   placeholder: 'Password',
@@ -273,10 +265,8 @@ class _HomepageState extends State<Homepage> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Login Button
                 SizedBox(
-                  width: double.infinity, // full-width
+                  width: double.infinity,
                   child: CupertinoButton.filled(
                     borderRadius: BorderRadius.circular(50),
                     color: const Color(0xFF1DB954),
@@ -315,8 +305,6 @@ class _HomepageState extends State<Homepage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Biometrics Button
                 if (box.get("biometrics") == true)
                   CupertinoButton(
                     child: const Icon(Icons.fingerprint, color: CupertinoColors.black),
@@ -324,8 +312,6 @@ class _HomepageState extends State<Homepage> {
                       authenticate();
                     },
                   ),
-
-                // Erase Data
                 CupertinoButton(
                   child: const Text(
                     'Erase Data',
@@ -401,13 +387,11 @@ class _SignupState extends State<Signup> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo
                 Image.network(
                   'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
                   width: 150,
                 ),
                 const SizedBox(height: 40),
-
                 const Text(
                   'Create Account',
                   style: TextStyle(
@@ -425,7 +409,6 @@ class _SignupState extends State<Signup> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 CupertinoTextField(
                   controller: _username,
                   placeholder: 'Username',
@@ -468,8 +451,6 @@ class _SignupState extends State<Signup> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Sign Up Button
                 SizedBox(
                   width: double.infinity,
                   child: CupertinoButton.filled(
@@ -536,7 +517,12 @@ class _HomeState extends State<Home> {
 
 class PaymentPage extends StatefulWidget {
   final String url;
-  const PaymentPage({super.key, required this.url});
+  final Box box;
+  final String planName;
+  final int planPrice;
+  final String planDuration;
+
+  const PaymentPage({super.key, required this.url, required this.box, required this.planName, required this.planPrice, required this.planDuration});
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -550,6 +536,19 @@ class _PaymentPageState extends State<PaymentPage> {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (url) async {
+          // Check if payment is successful
+          if (url.contains("success") || url.contains("paid")) {
+            widget.box.put("plan_active", true);
+            widget.box.put("plan_name", widget.planName);
+            widget.box.put("plan_price", widget.planPrice);
+            widget.box.put("plan_duration", widget.planDuration);
+
+            if (Navigator.canPop(context)) Navigator.pop(context);
+          }
+        },
+      ))
       ..loadRequest(Uri.parse(widget.url));
   }
 
@@ -564,8 +563,6 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 }
 
-
-
 class HomeList extends StatefulWidget {
   const HomeList({super.key});
 
@@ -576,11 +573,8 @@ class HomeList extends StatefulWidget {
 class _HomeListState extends State<HomeList> {
   final bool isDark = false;
 
-  // ACTIVE PLAN CARD
   Widget activePlanCard(Box box) {
-    // Only show if plan is actually active
     if (box.get("plan_active") != true) return const SizedBox();
-
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(16),
@@ -605,10 +599,7 @@ class _HomeListState extends State<HomeList> {
             "${box.get("plan_name")} • ₱${box.get("plan_price")} / ${box.get("plan_duration")}",
             style: const TextStyle(color: CupertinoColors.black),
           ),
-
           const SizedBox(height: 12),
-
-          // RADIO STATUS
           Row(
             children: const [
               Icon(
@@ -620,10 +611,7 @@ class _HomeListState extends State<HomeList> {
               Text("Subscription Active"),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // CANCEL BUTTON
           CupertinoButton(
             padding: EdgeInsets.zero,
             child: const Text(
@@ -631,9 +619,7 @@ class _HomeListState extends State<HomeList> {
               style: TextStyle(color: CupertinoColors.destructiveRed),
             ),
             onPressed: () {
-              // Deactivate plan in Hive
               box.put("plan_active", false);
-              // Update UI
               setState(() {});
             },
           ),
@@ -642,8 +628,6 @@ class _HomeListState extends State<HomeList> {
     );
   }
 
-
-  // MUSIC CARD
   Widget musicCard(String title, String imageUrl) {
     return Container(
       width: 140,
@@ -654,161 +638,45 @@ class _HomeListState extends State<HomeList> {
           image: NetworkImage(imageUrl),
           fit: BoxFit.cover,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          )
-        ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          gradient: LinearGradient(
-            colors: [
-              CupertinoColors.white.withOpacity(0.75),
-              CupertinoColors.white.withOpacity(0.05),
-            ],
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-          ),
-        ),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Text(
-            title,
-            style: const TextStyle(
-              color: CupertinoColors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
+      alignment: Alignment.bottomLeft,
+      padding: const EdgeInsets.all(8),
+      child: Text(title, style: const TextStyle(color: CupertinoColors.white)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final box = Hive.box("database");
-
+    final Box box = Hive.box("database");
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text("Home"),
+      ),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Good evening",
-                  style: TextStyle(
-                    color: CupertinoColors.black,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage(
-                        "https://i.pinimg.com/736x/a4/71/31/a47131039ecbeffaf3ba573730976eb8.jpg",
-                      ),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // ✅ ACTIVE PLAN DISPLAY
             activePlanCard(box),
-
-            const SizedBox(height: 8),
-
-            // RECENTLY PLAYED
-            const Text(
-              "Recently Played",
-              style: TextStyle(
-                color: CupertinoColors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const SizedBox(height: 16),
+            const Text("New Releases", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 12),
-
             SizedBox(
               height: 160,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  musicCard(
-                    "Daily Mix",
-                    "https://i.scdn.co/image/ab676161000051744aac2151be750fecb674048a",
-                  ),
-                  musicCard(
-                    "Top Hits",
-                    "https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/thisisv3/1UwnrHfh8Kd8Y8Ax8a3qWy/en",
-                  ),
-                  musicCard(
-                    "Chill Vibes",
-                    "https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQ_CL_vmiqJmPosWnL6BQ_ccnCKo0_vGRZR5wLL64i3MrLaPM8X",
-                  ),
+                  musicCard("Album 1", "https://picsum.photos/id/1011/200/200"),
+                  musicCard("Album 2", "https://picsum.photos/id/1012/200/200"),
+                  musicCard("Album 3", "https://picsum.photos/id/1013/200/200"),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // MADE FOR YOU
-            const Text(
-              "Made for You",
-              style: TextStyle(
-                color: CupertinoColors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            SizedBox(
-              height: 160,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  musicCard(
-                    "Your Favorites",
-                    "https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/thisisv3/6Dp4LInLyMVA2qhRqQ6AGL/en",
-                  ),
-                  musicCard(
-                    "Trending Now",
-                    "https://preview.redd.it/walang-ibang-gugustuhin-kundi-ikaw-v0-ki3o8ath5z2d1.jpeg",
-                  ),
-                  musicCard(
-                    "Radio Mix",
-                    "https://pickasso.spotifycdn.com/image/ab67c0de0000deef/dt/v1/img/radio/artist/2kxP07DLgs4xlWz8YHlvfh/de",
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 }
-
 
 class Settings extends StatefulWidget {
   final Box box;
