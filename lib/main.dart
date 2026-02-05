@@ -173,7 +173,7 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> authenticate() async {
-    try{
+    try {
       final bool didAuthenticate = await auth.authenticate(
         localizedReason: 'Please authenticate to login',
         biometricOnly: true,
@@ -193,97 +193,182 @@ class _HomepageState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Login', style: TextStyle(fontWeight: FontWeight.w200, fontSize: 35),),
-            CupertinoTextField(
-              controller: _username,
-              prefix: Icon(CupertinoIcons.person),
-              placeholder: "Username",
-            ),
-            SizedBox(height: 3,),
-            CupertinoTextField(
-              controller: _password,
-              prefix: Icon(CupertinoIcons.padlock),
-              placeholder: "Password",
-              obscureText: hidePassword,
-              suffix: CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  child: Icon(hidePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash), onPressed: (){
-                setState(() {
-                  hidePassword = !hidePassword;
-                });
-              }),
-            ),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.white,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Logo
+                Image.network(
+                  'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
+                  width: 150,
+                ),
+                const SizedBox(height: 40),
 
-            Center(
-              child: Column(
-                children: [
-                  CupertinoButton(
-                    child: const Text('Login'),
-                    onPressed: (){
-                      if (_username.text.trim() == box.get("username") && _password.text.trim() == box.get("password")) {
-                        Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context)=> Home(box: box)),);
+                // Welcome Text
+                const Text(
+                  'Welcome Back',
+                  style: TextStyle(
+                    color: CupertinoColors.black,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Login to your account',
+                  style: TextStyle(
+                    color: CupertinoColors.systemGrey,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Username Field
+                CupertinoTextField(
+                  controller: _username,
+                  placeholder: 'Username',
+                  prefix: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(CupertinoIcons.person, color: CupertinoColors.black),
+                  ),
+                  style: const TextStyle(color: CupertinoColors.black),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Password Field
+                CupertinoTextField(
+                  controller: _password,
+                  placeholder: 'Password',
+                  obscureText: hidePassword,
+                  prefix: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(CupertinoIcons.lock, color: CupertinoColors.black),
+                  ),
+                  suffix: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Icon(
+                        hidePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+                        color: CupertinoColors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          hidePassword = !hidePassword;
+                        });
+                      }),
+                  style: const TextStyle(color: CupertinoColors.black),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Login Button
+                SizedBox(
+                  width: double.infinity, // full-width
+                  child: CupertinoButton.filled(
+                    borderRadius: BorderRadius.circular(50),
+                    color: const Color(0xFF1DB954),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: const Text(
+                      'Login',
+                      style: TextStyle(fontSize: 16, color: CupertinoColors.white),
+                    ),
+                    onPressed: () {
+                      if (_username.text.trim() == box.get("username") &&
+                          _password.text.trim() == box.get("password")) {
+                        Navigator.pushReplacement(
+                            context,
+                            CupertinoPageRoute(
+                                builder: (context) => Home(box: box)));
                       } else {
-                        showCupertinoDialog(context: context, builder: (context){
-                          return CupertinoAlertDialog(
-                            title: const Text("Login Failed"),
-                            content: const Text("Invalid username or password"),
-                            actions: [
-                              CupertinoButton(
-                                child: const Text("OK"),
-                                onPressed: (){
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ],
-                          );
-                        },
+                        showCupertinoDialog(
+                          context: context,
+                          builder: (context) {
+                            return CupertinoAlertDialog(
+                              title: const Text("Login Failed"),
+                              content: const Text("Invalid username or password"),
+                              actions: [
+                                CupertinoButton(
+                                  child: const Text("OK"),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          },
                         );
                       }
                     },
                   ),
+                ),
+                const SizedBox(height: 16),
 
-                  (box.get("biometrics") == true) ? CupertinoButton(child: Icon(Icons.fingerprint), onPressed: (){
-                    authenticate();
-                  }) : SizedBox.shrink(),
-
-                  CupertinoButton(child: Text('Erase Data'), onPressed: (){
-                    showCupertinoDialog(context: context, builder: (context){
-                      return CupertinoAlertDialog(
-                        content: Text("Are you sure to delete all data?"),
-                        actions: [
-                          CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              child: Text("Cancel"), onPressed: (){
-                            Navigator.pop(context);
-                          }),
-                          CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              child: Text("Yes"), onPressed: (){
-                            box.clear();
-                            Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context)=> Signup(box: box)));
-                          }),
-                        ],
-                      );
+                // Biometrics Button
+                if (box.get("biometrics") == true)
+                  CupertinoButton(
+                    child: const Icon(Icons.fingerprint, color: CupertinoColors.black),
+                    onPressed: () {
+                      authenticate();
                     },
+                  ),
+
+                // Erase Data
+                CupertinoButton(
+                  child: const Text(
+                    'Erase Data',
+                    style: TextStyle(color: CupertinoColors.systemGrey),
+                  ),
+                  onPressed: () {
+                    showCupertinoDialog(
+                      context: context,
+                      builder: (context) {
+                        return CupertinoAlertDialog(
+                          content: const Text("Are you sure to delete all data?"),
+                          actions: [
+                            CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                child: const Text("Cancel"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                }),
+                            CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                child: const Text("Yes"),
+                                onPressed: () {
+                                  box.clear();
+                                  Navigator.pushReplacement(
+                                    context,
+                                    CupertinoPageRoute(
+                                        builder: (context) => Signup(box: box)),
+                                  );
+                                }),
+                          ],
+                        );
+                      },
                     );
-                  }),
-                ],
-              ),
-            )
-          ],
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-    ));
+    );
   }
 }
-
 
 class Signup extends StatefulWidget {
   final Box box;
@@ -307,52 +392,110 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(child: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Create a local account', style: TextStyle(fontWeight: FontWeight.w200, fontSize: 35),),
-            CupertinoTextField(
-              controller: _username,
-              prefix: Icon(CupertinoIcons.person),
-              placeholder: "Username",
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.white,
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Logo
+                Image.network(
+                  'https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_CMYK_Green.png',
+                  width: 150,
+                ),
+                const SizedBox(height: 40),
+
+                const Text(
+                  'Create Account',
+                  style: TextStyle(
+                    color: CupertinoColors.black,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Sign up for a free account',
+                  style: TextStyle(
+                    color: CupertinoColors.systemGrey,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                CupertinoTextField(
+                  controller: _username,
+                  placeholder: 'Username',
+                  prefix: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(CupertinoIcons.person, color: CupertinoColors.black),
+                  ),
+                  style: const TextStyle(color: CupertinoColors.black),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CupertinoTextField(
+                  controller: _password,
+                  placeholder: 'Password',
+                  obscureText: hidePassword,
+                  prefix: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(CupertinoIcons.lock, color: CupertinoColors.black),
+                  ),
+                  suffix: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: Icon(
+                        hidePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+                        color: CupertinoColors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          hidePassword = !hidePassword;
+                        });
+                      }),
+                  style: const TextStyle(color: CupertinoColors.black),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Sign Up Button
+                SizedBox(
+                  width: double.infinity,
+                  child: CupertinoButton.filled(
+                    borderRadius: BorderRadius.circular(50),
+                    color: const Color(0xFF1DB954),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: const Text('Sign Up',
+                        style: TextStyle(fontSize: 16, color: CupertinoColors.white)),
+                    onPressed: () {
+                      box.put("username", _username.text.trim());
+                      box.put("password", _password.text.trim());
+                      box.put("biometrics", false);
+
+                      Navigator.pushReplacement(
+                          context,
+                          CupertinoPageRoute(
+                              builder: (context) => Homepage(box: box)));
+                    },
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 3,),
-            CupertinoTextField(
-              controller: _password,
-              prefix: Icon(CupertinoIcons.padlock),
-              placeholder: "Password",
-              obscureText: hidePassword,
-              suffix: CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  child: Icon(hidePassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash), onPressed: (){
-                setState(() {
-                  hidePassword = !hidePassword;
-                });
-              }),
-            ),
-
-            Center(
-              child: Column(
-                children: [
-                  CupertinoButton(child: Text('Signup'), onPressed: (){
-                    box.put("username", _username.text.trim());
-                    box.put("password", _password.text.trim());
-                    box.put("biometrics", false);
-
-                    Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context)=> Homepage(box: box)));
-                  }),
-
-                ],
-              ),
-            )
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }
 
