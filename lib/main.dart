@@ -82,6 +82,8 @@ class _PlansPageState extends State<PlansPage> {
 
   Future<void> payNow(
       BuildContext context, String plan, int price, String duration) async {
+
+    // Show loading
     showCupertinoDialog(
       context: context,
       builder: (_) => const CupertinoAlertDialog(
@@ -90,6 +92,7 @@ class _PlansPageState extends State<PlansPage> {
       ),
     );
 
+    // Make Xendit request
     final auth = 'Basic ${base64Encode(utf8.encode(secretKey))}';
     final response = await http.post(
       Uri.parse("https://api.xendit.co/v2/invoices/"),
@@ -104,8 +107,17 @@ class _PlansPageState extends State<PlansPage> {
     );
 
     final data = jsonDecode(response.body);
+
+    // Close loading
     Navigator.pop(context);
 
+    // ✅ SAVE PLAN DATA TO HIVE
+    widget.box.put("plan_active", true);
+    widget.box.put("plan_name", plan);
+    widget.box.put("plan_price", price);
+    widget.box.put("plan_duration", duration);
+
+    // Open payment page
     Navigator.push(
       context,
       CupertinoPageRoute(
@@ -113,6 +125,7 @@ class _PlansPageState extends State<PlansPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +433,74 @@ class HomeList extends StatefulWidget {
 class _HomeListState extends State<HomeList> {
   final bool isDark = false;
 
+  // ACTIVE PLAN CARD
+  Widget activePlanCard(Box box) {
+    // Only show if plan is actually active
+    if (box.get("plan_active") != true) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemGreen.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: CupertinoColors.systemGreen),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Active Plan",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: CupertinoColors.systemGreen,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "${box.get("plan_name")} • ₱${box.get("plan_price")} / ${box.get("plan_duration")}",
+            style: const TextStyle(color: CupertinoColors.black),
+          ),
+
+          const SizedBox(height: 12),
+
+          // RADIO STATUS
+          Row(
+            children: const [
+              Icon(
+                CupertinoIcons.largecircle_fill_circle,
+                color: CupertinoColors.systemGreen,
+                size: 18,
+              ),
+              SizedBox(width: 8),
+              Text("Subscription Active"),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // CANCEL BUTTON
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            child: const Text(
+              "Cancel Subscription",
+              style: TextStyle(color: CupertinoColors.destructiveRed),
+            ),
+            onPressed: () {
+              // Deactivate plan in Hive
+              box.put("plan_active", false);
+              // Update UI
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // MUSIC CARD
   Widget musicCard(String title, String imageUrl) {
     return Container(
       width: 140,
@@ -468,6 +549,8 @@ class _HomeListState extends State<HomeList> {
 
   @override
   Widget build(BuildContext context) {
+    final box = Hive.box("database");
+
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
       child: SafeArea(
@@ -502,7 +585,12 @@ class _HomeListState extends State<HomeList> {
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // ✅ ACTIVE PLAN DISPLAY
+            activePlanCard(box),
+
+            const SizedBox(height: 8),
 
             // RECENTLY PLAYED
             const Text(
